@@ -5,20 +5,48 @@
 #
 ##
 
-if(!file.exists("./data")){dir.create("./data")}
-
-if(!file.exists("./data/UCI HAR Dataset.zip")){
-  # Since the file doesn't exist lets download it
+# Step 1: Get the data
+# Download the data
+if(!file.exists("UCI HAR Dataset.zip")){
   url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
-  download.file(url,destfile="./data/UCI HAR Dataset.zip")
+  download.file(url,destfile="UCI HAR Dataset.zip")
+  
   # This was designed for a Windows 7 environment.  If this doesn't work you 
   # will need to uncomment the following line.
-  #download.file(url,destfile="./data/UCI HAR Dataset.zip",method="curl")
+  #download.file(url,destfile="UCI HAR Dataset.zip",method="curl")
+  
+  rm(url)  # Leave no trace
 }
 
-if(!file.exists("./data/UCI HAR Dataset/README.txt")){
-  # The files have not been unzipped
-  setwd("./data")
+# Unzip the data
+if(!file.exists("UCI HAR Dataset/README.txt")){
   unzip("UCI HAR Dataset.zip")
-  setwd("~")
 }
+
+# Step 2: Build tidy table
+
+activity_labels <- read.table("UCI HAR Dataset/activity_labels.txt", sep = " ", col.names = c("activity.id", "activity.label"))
+subject_test <- read.delim("UCI HAR Dataset/test/subject_test.txt", sep = " ", header = FALSE, col.names = c("subject.id"))
+subject_train <- read.delim("UCI HAR Dataset/train/subject_train.txt", sep = " ", header = FALSE, col.names = c("subject.id"))
+features <- read.table("UCI HAR Dataset/features.txt", sep = " ", col.names = c("column.id", "messy.name"))
+
+# Step 3: Scrub the feature names
+scrubber <- function(messy){
+  messy <- gsub("-",".", messy)
+  messy <- sub("Body",".body", messy)
+  messy <- sub("Gyro",".gyro", messy)
+  messy <- sub("Jerk",".jerk", messy)
+  messy <- sub("arCoeff", "ar.coeff", messy)
+  messy <- sub("Acc",".acc", messy)
+  messy <- sub("\\()",".", messy)
+  messy <- sub("\\,",".", messy) 
+  tolower(messy)
+}
+features$scrubbed.names <- scrubber(features$messy.name)
+
+X_train <- read.table("UCI HAR Dataset/train/X_train.txt", sep = " ", header = FALSE, fill = TRUE)
+Y_train <- read.table("UCI HAR Dataset/train/y_train.txt", sep = " ", header = FALSE, fill = TRUE)
+
+X_test <- read.table("UCI HAR Dataset/test/X_test.txt", sep = " ", header = FALSE, fill = TRUE)
+Y_test <- read.table("UCI HAR Dataset/test/Y_test.txt", sep = " ", header = FALSE, fill = TRUE)
+
