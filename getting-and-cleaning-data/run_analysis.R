@@ -24,7 +24,6 @@ if(!file.exists("UCI HAR Dataset/README.txt")){
 }
 
 # Step 2: Build tidy table
-
 activity_labels <- read.table("UCI HAR Dataset/activity_labels.txt", sep = " ", col.names = c("activity.id", "activity.label"))
 subject_test <- read.delim("UCI HAR Dataset/test/subject_test.txt", sep = " ", header = FALSE, col.names = c("subject.id"))
 subject_train <- read.delim("UCI HAR Dataset/train/subject_train.txt", sep = " ", header = FALSE, col.names = c("subject.id"))
@@ -32,21 +31,43 @@ features <- read.table("UCI HAR Dataset/features.txt", sep = " ", col.names = c(
 
 # Step 3: Scrub the feature names
 scrubber <- function(messy){
-  messy <- gsub("-",".", messy)
   messy <- sub("Body",".body", messy)
   messy <- sub("Gyro",".gyro", messy)
   messy <- sub("Jerk",".jerk", messy)
   messy <- sub("arCoeff", "ar.coeff", messy)
   messy <- sub("Acc",".acc", messy)
-  messy <- sub("\\()",".", messy)
+  messy <- sub("\\()-",".", messy)
+  messy <- sub("\\()","", messy)
+  messy <- gsub("-",".", messy)
+  messy <- sub("\\(",".", messy)
+  messy <- sub("\\)","", messy)
   messy <- sub("\\,",".", messy) 
   tolower(messy)
 }
 features$scrubbed.names <- scrubber(features$messy.name)
 
-X_train <- read.table("UCI HAR Dataset/train/X_train.txt", sep = " ", header = FALSE, fill = TRUE)
-Y_train <- read.table("UCI HAR Dataset/train/y_train.txt", sep = " ", header = FALSE, fill = TRUE)
+widths <- rep(16, 561) 
 
-X_test <- read.table("UCI HAR Dataset/test/X_test.txt", sep = " ", header = FALSE, fill = TRUE)
-Y_test <- read.table("UCI HAR Dataset/test/Y_test.txt", sep = " ", header = FALSE, fill = TRUE)
+X_train <- read.fwf("UCI HAR Dataset/train/X_train.txt", 
+                    widths = widths, 
+                    header = FALSE, 
+                    col.names = features$scrubbed.names)
 
+Y_train <- read.fwf("UCI HAR Dataset/train/y_train.txt", 
+                    widths = widths, 
+                    header = FALSE, 
+                    col.names = features$scrubbed.names)
+
+
+X_test <- read.fwf("UCI HAR Dataset/test/X_test.txt", 
+                   widths = widths, 
+                   header = FALSE, 
+                   col.names = features$scrubbed.names)
+
+Y_test <- read.fwf("UCI HAR Dataset/test/Y_test.txt", 
+                   widths = widths, 
+                   header = FALSE, 
+                   col.names = features$scrubbed.names)
+
+keep <- names(Y_train) %in% c(grep("std",  names(Y_train), value=TRUE), 
+                              grep("mean", names(Y_train), value=TRUE))
