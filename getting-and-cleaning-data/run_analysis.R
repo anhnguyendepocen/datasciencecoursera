@@ -40,9 +40,6 @@ scrubber <- function(messy){
   messy <- sub("Mag", ".mag", messy)
   messy <- sub("arCoeff", "ar.coeff", messy)
   messy <- sub("Acc",".acc", messy)
-  # The next line is to ensure this doesn't get pulled in latter
-  messy <- sub("meanFreq","avg.freq", messy)
-  messy <- sub("gravityMean", "gravity.avg", messy)
   messy <- sub("\\()-",".", messy)
   messy <- sub("\\()","", messy)
   messy <- gsub("-",".", messy)
@@ -50,39 +47,34 @@ scrubber <- function(messy){
   messy <- sub("\\)","", messy)
   messy <- sub("\\,",".", messy)
   messy <- tolower(messy)
-  messy <- sub("mean.gravity",".avg.gravity", messy)
-  sub("bodybody","body.body", messy)
+  sub("bodybody","body", messy)
 }
 # Now that the function is defined, let's scrub some names
-features$scrubbed.names <- scrubber(features$messy.name)
+features$scrubbed.name <- scrubber(features$messy.name)
+features$keep <- (grepl("std|mean",features$messy.name) & !(grepl("meanFreq",features$messy.name)))
 
 # Leave no trace
 rm(scrubber)
 
 X_train <- read.table("UCI HAR Dataset/train/X_train.txt", 
                       header = FALSE, 
-                      col.names = features$scrubbed.names,
+                      col.names = features$scrubbed.name,
                       comment.char = "",
                       nrow=7352)
 
 X_test <- read.table("UCI HAR Dataset/test/X_test.txt", 
                      header = FALSE, 
-                     col.names = features$scrubbed.names,
+                     col.names = features$scrubbed.name,
                      comment.char = "",
                      nrow=2947)
 
 # Since we only want to keep the mean and standard deviation measures, let's
-# identify the columns we want to keep out of the 561 posibilities
-keep <- names(X_train) %in% c(grep("std",  names(X_train), value=TRUE), 
-                           grep("mean", names(X_train), value=TRUE))
-
-# Let's only keep the columns that have std or mean in their name
-X_train <- X_train[,keep]
-X_test <- X_test[,keep]
+# identify the columns we want to keep out of the 561 posibilities                          
+X_train <- X_train[,features$keep]
+X_test <- X_test[,features$keep]
 
 # Leave no trace
 rm(features)
-rm(keep)
 
 # This is just so I can track where the observations came from
 #X_test$measure = c("test")
