@@ -1,0 +1,119 @@
+# The Economic and Public Health Consequences of Severe Storms
+
+## Synopsis
+
+In this analysis we try to identify which types of events are most harmful with respect to population health and which types of events have the greatest economic consequences?
+
+We obtained data from [the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database](http://www.ncdc.noaa.gov/stormevents/). This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+From these data we found FINDINGS
+
+## Data Processing
+
+We first read in the NOAA storm database.  The data is in a csv file.
+
+```{r, cache=TRUE}
+## Check for the csv file and download it if not present
+csv <- 'storm.csv'
+if(!file.exists(csv)){
+  ## Check for the bzip archive and download it if not present
+  temp <- 'storm.data.bz2'
+  if(!file.exists(temp)){
+    download.file('http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2',temp)
+  }
+library(R.utils)
+bunzip2(temp, destname='storm.csv')
+}
+
+storm.data <- read.csv('storm.csv', nrows=902297, stringsAsFactors = FALSE)
+dim(storm.data)
+```
+
+There are 902,297 observations and 37 variables, however we do not need all of them.  So we will select a subset of the variables for this analysis.
+
+```{r}
+storm.data <- storm.data[,c('BGN_DATE', 'EVTYPE', 'FATALITIES', 'INJURIES', 'PROPDMG', 'PROPDMGEXP', 'CROPDMG', 'CROPDMGEXP')]
+```
+
+### Create Damage Measure
+Severe weather can be responsible for both crop and property damage.  In order to measure which type of events have the greatest economic consequences we neet the total of the property crop damage.  The first step is to scale the data.  
+
+First we standardize the code for the property and crop damage units variables:
+
+```{r}
+## Standardize the property damage units
+storm.data$PROPDMGEXP <- tolower(storm.data$PROPDMGEXP)
+## Standardize the crop damage units
+storm.data$CROPDMGEXP <- tolower(storm.data$CROPDMGEXP)
+```
+
+Next we create a function that will help scale the data.  If the scaling variable is equal to 'h' then it is in hundreds.  If it is a 'k' it is in thousands. Etc.
+
+```{r, cache=TRUE}
+## This function helps with scaling the data
+scaleData <- function(number,scale){
+  if(scale == 'h'){
+    return(number * 100)
+  } else if (scale == 'k'){
+    return(number * 1000)
+  } else if (scale == 'm'){
+    return(number * 1000000)
+  } else if (scale == 'b'){
+    return(number * 1000000000)
+  } else{
+    return(number)
+  }
+}
+
+## Scale the property damage
+storm.data$property <- 0 # Default value
+storm.data$property <- apply(storm.data, 1, function(x) {scaleData(as.numeric(x[5]), x[6])})
+## Scale the crop damage
+storm.data$crops <- 0 # Default value
+storm.data$crops <- apply(storm.data, 1, function(x) {scaleData(as.numeric(x[7]), x[8])})
+```
+
+We finish by summing the property damage and crop damage amounts to get the amount of damage related to the event.
+
+```{r}
+storm.data$damage = storm.data$property + storm.data$crops
+```
+
+### Create Population Health Harm Measure
+Severe weather can cause both injury and death.  Death from a weather event causes more harm than just injury.  We therefore created a weighted measure of harm.
+
+```{r}
+storm.data$harm <- storm.data$INJURIES + (4 * (storm.data$FATALITIES))
+```
+
+
+### Event Type Selection
+```{r}
+
+#storm.data$EVTYPE <- tolower(storm.data$EVTYPE)
+#event.type <- as.data.frame(table(storm.data$EVTYPE))
+#event.type$event.type <- NA
+
+event.categories <- c('Avalanche','Blizzard','Coastal Flood','Cold/Wind Chill', 'Debris Flow', 'Dense Fog', 'Dense Smoke', 'Drought', 'Dust Devil', 'Dust Storm', 'Excessive Heat', 'Extreme Cold/Wind Chill', 'Flash Flood','Flood', 'Freezing Fog', 'Frost/Freeze', 'Funnel Cloud', 'Hail', 'Heat', 'Heavy Rain', 'Heavy Snow', 'High Surf', 'High Wind', 'Hurricane/Typhoon', 'Ice Storm', 'Lakeshore Flood', 'Lake-Effect Snow', 'Lightning', 'Marine Hail', 'Marine High Wind', 'Marine Strong Wind', 'Marine Thunderstorm Wind', 'Rip Current', 'Seiche', 'Sleet', 'Storm Tide', 'Strong Wind', 'Thunderstorm Wind', 'Tornado', 'Tropical Depression', 'Tropical Storm', 'Tsunami', 'Volcanic Ash', 'Waterspout', 'Wildfire', 'Winter Storm', 'Winter Weather')
+
+```
+
+We begin by cleaning up the begining date variable:
+
+```{r}
+#storm.data$BGN_DATE <- substr(storm.data$BGN_DATE, 1, nchar(storm.data$BGN_DATE)-8)
+```
+
+
+
+[The storm events database details](http://www.ncdc.noaa.gov/stormevents/details.jsp) indicates that prior to 1996, not all event types were recorded. 
+
+
+
+## Results 
+
+### Which types of events are most harmful with respect to population health?
+TEXT
+
+### Which types of events have the greatest economic consequences?
+
