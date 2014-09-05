@@ -1,0 +1,24 @@
+# The Properties of the Exponential Distribution 
+**Author: Mike Silva <<mike.a.silva@gmail.com>>**  
+**Last Ran: `r Sys.time() `**  
+
+The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also also 1/lambda. Set lambda = 0.2 for all of the simulations. In this simulation, you will investigate the distribution of averages of 40 exponential(0.2)s. Note that you will need to do a thousand or so simulated averages of 40 exponentials.
+
+Illustrate via simulation and associated explanatory text the properties of the distribution of the mean of 40 exponential(0.2)s.  You should
+1. Show where the distribution is centered at and compare it to the theoretical center of the distribution.
+2. Show how variable it is and compare it to the theoretical variance of the distribution.
+3. Show that the distribution is approximately normal.
+4. Evaluate the coverage of the confidence interval for 1/lambda: X¯±1.96Sn???.
+
+```{r}
+lambda <- 0.2
+similations.ran <- 10000
+results <- vector()
+for(i in 1:similations.ran) {
+  results[i] <- mean(rexp(40, lambda))
+}
+hist(results, main = "Simulated Averages of 40 Exponentials",col = "lightblue", breaks = 50)
+ abline(v = mean(results), col = "red", lwd = 2)
+mean(results)
+1/lambda
+```
