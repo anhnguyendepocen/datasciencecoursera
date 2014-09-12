@@ -2,23 +2,69 @@
 **Author: Mike Silva <<mike.a.silva@gmail.com>>**  
 **Last Ran: `r Sys.time() `**  
 
+## Simulation Parameters  
+
 The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also also 1/lambda. Set lambda = 0.2 for all of the simulations. In this simulation, you will investigate the distribution of averages of 40 exponential(0.2)s. Note that you will need to do a thousand or so simulated averages of 40 exponentials.
 
 Illustrate via simulation and associated explanatory text the properties of the distribution of the mean of 40 exponential(0.2)s.  You should
-1. Show where the distribution is centered at and compare it to the theoretical center of the distribution.
-2. Show how variable it is and compare it to the theoretical variance of the distribution.
-3. Show that the distribution is approximately normal.
-4. Evaluate the coverage of the confidence interval for 1/lambda: X¯±1.96Sn???.
+1.Show where the distribution is centered at and compare it to the theoretical center of the distribution.
+2.Show how variable it is and compare it to the theoretical variance of the distribution.
+3.Show that the distribution is approximately normal.
+4.Evaluate the coverage of the confidence interval for 1/lambda: X¯±1.96Sn???.
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+## Simulation Parameters
 lambda <- 0.2
-similations.ran <- 10000
-results <- vector()
-for(i in 1:similations.ran) {
-  results[i] <- mean(rexp(40, lambda))
+simulations.ran <- 3000
+number.of.exponentials <- 40
+## Objects to hold the results
+sim.results <- mean.results <- data.frame(simulation=numeric(), value=numeric(), measure=factor())
+
+## Simulation loop
+for(i in 1:simulations.ran) {
+  ## Run the Simulation
+  simulation <- rexp(number.of.exponentials, lambda)
+  ## Load simulation results into sim.results data frame
+  results <- data.frame(simulation = rep(i, number.of.exponentials), value = simulation, measure=factor('Simulation'))
+  sim.results <- rbind_list(sim.results, results)
+  ## Compute the mean of the simulation
+  results <- data.frame(simulation = i, value = mean(simulation), measure=factor('Mean'))
+  mean.results <- rbind_list(mean.results, results)
+  
 }
-hist(results, main = "Simulated Averages of 40 Exponentials",col = "lightblue", breaks = 50)
- abline(v = mean(results), col = "red", lwd = 2)
-mean(results)
-1/lambda
+
+ggplot(sim.results, aes(x = value)) + geom_histogram(binwidth=1, aes(y = ..density..), fill='gray', color='black') + ggtitle(paste('Figure 1: Result of the', prettyNum(simulations.ran, big.mark=','),'Simulations')) + theme(axis.title.x = element_blank()) + ylab('Density')
+
+ggplot(mean.results, aes(x = value)) + geom_histogram(binwidth=0.2, aes(y = ..density..), fill='gray', color='black') + ggtitle('Figure 2: Means of the Simulations') + geom_vline(xintercept = mean(mean.results$value), color='red', linetype = "longdash") + theme(axis.title.x = element_blank()) + ylab('Density')
+
+```
+
+## Properties of the Distribution  
+
+### Center of the Distribution
+
+The average, shown as the red line in the figure above is `r mean(results)` which is a close aproximation of the population `r 1/lambda`. 
+
+### Variance of the Distribution  
+
+The variance of the simulation is `r sd(results)^2` which is again a close appoximation of the population variance of `r 1/lambda`.  The standard deviation of the simulation is `r sd(results)` which is close to `r 1/lambda`.
+
+## Appendix  
+
+### Code Sample  
+
+```{r, eval=FALSE}
+lambda <- 0.2
+simulations.ran <- 1000
+number.of.exponentials <- 40
+## Run the Simulation
+results <- vector()
+for(i in 1:simulations.ran) {
+  results[i] <- mean(rexp(number.of.exponentials, lambda))
+}
+```
+```{r, echo=FALSE}
+#results2 <- apply(matrix(rexp(number.of.exponentials, lambda), simulations.ran), 1, mean)
 ```
