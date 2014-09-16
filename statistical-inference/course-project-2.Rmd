@@ -1,0 +1,23 @@
+---
+title: "Tooth Growth"
+author: "By: Mike Silva"
+date: "September 2014"
+output:
+  pdf_document: default
+  html_document:
+    theme: cerulean
+---
+```{r, echo=FALSE, message=FALSE}
+#library(dplyr)
+library(ggplot2)
+```
+Introduction
+The response is the length of teeth in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).
+## Exploratory Data Analyses  
+
+```{r, echo=FALSE}
+## Visualize the data
+ggplot(data = ToothGrowth, aes(x=dose, y=len, color=supp))+geom_point()+xlab('Dose in Milligrams')+ylab('Tooth Length')+facet_grid(. ~ supp)+theme(legend.position='none')+ggtitle('Figure 1: Tooth Length by Delivery Method (Orange Juice or Vitamin C)')+stat_smooth(method=lm)
+```
+
+We observe the tooth length the relationship between the dose and tooth length is positive.  
