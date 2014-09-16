@@ -1,22 +1,17 @@
 ---
 title: "The Properties of the Exponential Distribution"
-author: "By: Mike Silva"
+author: "Mike Silva"
 date: "September 2014"
 output:
   pdf_document: default
-  html_document:
-    theme: cerulean
 ---
 
-To explore the properties of exponential distributions we will conduct a simulation.  Each simulation will randomly select 40 exponential distributions and average them.  The simulation will run 1,000 times.  Once simulated we will explore the properties based on the sample and make inferences.  
+## Synopsis  
+To explore the properties of exponential distributions we conducted a simulation.  In each simulation we randomly selected 40 exponential distributions and average them.  The simulation was run 1,000 times.  Once simulated we explored the properties of the sample.  
 
 ## Simulation of Exponential Distribution  
-```{r, echo=FALSE, message=FALSE}
+```{r, message=FALSE}
 library(dplyr)
-library(ggplot2)
-```
-
-```{r}
 ## Simulation Parameters 
 lambda <- 0.2
 simulations <- 1000
@@ -38,20 +33,24 @@ for(i in 1:simulations) {
 
 ## Results  
 Now that we have completed the simulation let's visualize the results.  First let's explore the distribution of the randomly selected observations:  
-
-```{r, echo=FALSE}
+```{r, fig.width=7, fig.height=4, echo=FALSE}
+library(ggplot2)
 ggplot(sim.results, aes(x = value)) + geom_histogram(binwidth=1, aes(y = ..density..), fill='#FF9999', color='black') + ggtitle(paste('Figure 1: Distribution of the Result of the', prettyNum(simulations, big.mark=','),'Simulations')) + theme(axis.title.x = element_blank()) + ylab('Density')
 ```
 
-We observe they are indeed an exponential distribution.  Now let's look at the value of the mean of `r number.of.exponentials.in.a.mean` exponentials:  
+We observe the simulation is indeed an exponential distribution.  Now let's look at the distribution of the mean of `r number.of.exponentials.in.a.mean` exponentials:  
 
 ```{r, echo=FALSE}
-ggplot(mean.results, aes(x = value)) + geom_histogram(binwidth=0.2, aes(y = ..density..), fill='#FF9999', color='black') + ggtitle(paste('Figure 2: Distribution of the Means of',number.of.exponentials.in.a.mean,'Simulations')) + geom_vline(xintercept = mean(mean.results$value), color='red', linetype = "longdash") + theme(axis.title.x = element_blank()) + ylab('Density') + stat_function(fun=dnorm,colour = "#009E73",arg = list(mean = 1/lambda,sd = 1/lambda*(1/sqrt(number.of.exponentials.in.a.mean))))
+mu <- 1/lambda
+ci.lower.bound <-mu - ((1.96*(1/lambda))/sqrt(number.of.exponentials.in.a.mean))
+ci.upper.bound <-mu + ((1.96*(1/lambda))/sqrt(number.of.exponentials.in.a.mean))
+ggplot(mean.results, aes(x = value)) + geom_histogram(binwidth=0.2, aes(y = ..density..), fill='#FF9999', color='black') + ggtitle(paste('Figure 2: Distribution of the Means of',number.of.exponentials.in.a.mean,'Simulations')) + geom_vline(xintercept = mean(mean.results$value), color='red', linetype = "longdash") + theme(axis.title.x = element_blank()) + ylab('Density') + stat_function(fun=dnorm,colour = "#009E73",arg = list(mean = 1/lambda,sd = 1/lambda*(1/sqrt(number.of.exponentials.in.a.mean)))) + geom_vline(xintercept = ci.lower.bound, color='blue', linetype = "longdash") + geom_vline(xintercept = ci.upper.bound, color='blue', linetype = "longdash")
 ```
 
 The following observations can be made about exponential distributions:  
 
-*  The average, shown as the red line in figure 2 is `r mean(sim.results$value)` which is a close aproximation of the theoretical mean of `r 1/lambda`.  
-*  The variance of the simulation is `r sd(sim.results$value)^2` which is again a close appoximation of the theoretical variance of `r (1/lambda)^2`.  The standard deviation of the simulation is `r sd(sim.results$value)` which is close to `r 1/lambda`.  
-*  We observe that the distribution of the means fit in the green normal curve.  
-*  We observe that % of the observations fall 
+*  The average (shown as the red line in figure 2) is `r mean(sim.results$value)` which is a close aproximation of the theoretical mean of `r 1/lambda`.  
+*  The variance of the simulation is `r sd(sim.results$value)^2` which is again a close appoximation of the theoretical variance of `r (1/lambda)^2`.
+*  The standard deviation of the simulation is `r sd(sim.results$value)` which is close to `r 1/lambda`.  
+*  We observe that the distribution of the means generally fits in the green normal curve.  
+*  We also observe that `r (length(mean.results[mean.results$value > ci.lower.bound & mean.results$value < ci.upper.bound,]) / nrow(mean.results)) * 100`% of the means fall within the 95% confidence interval (the blue dashed lines in figure 2).
