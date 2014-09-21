@@ -1,9 +1,10 @@
 ---
 title: "Tooth Growth"
-author: "By: Mike Silva"
+author: 'By: Mike Silva'
 date: "September 2014"
 output:
-  pdf_document: default
+  word_document: default
+  pd_document: default
   html_document:
     theme: cerulean
 ---
@@ -14,37 +15,69 @@ library(pander)
 ```
 ## Introduction
 
-The response is the length of teeth in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).
+The data for these analyses measures the the length of teeth in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with two delivery methods (orange juice or ascorbic acid).
 
-## Exploratory Data Analyses  
-We begin by looking at the relationship between tooth length, dose, and delivery method.
+## Exploratory Data Analysis  
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=8}
+We begin by looking at the relationship between tooth cell length, delivery method and dose.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=8}
 ## Visualize the data
-ggplot(data = ToothGrowth, aes(x=dose, y=len, color=supp))+geom_point()+xlab('Dose in Milligrams')+ylab('Tooth Length')+facet_grid(. ~ supp)+theme(legend.position='none')+ggtitle('Figure 1: Tooth Length by Dose and Delivery Method (O.J. or Vitamin C)')+stat_smooth()
+ggplot(data = ToothGrowth, aes(x=dose, y=len, color=supp))+geom_point()+xlab('Dose in Milligrams')+ylab('Length in Microns')+facet_grid(. ~ supp)+theme(legend.position='none')+ggtitle('Figure 1: Odontoblast Cell Length by Dose and Delivery Method (O.J. or Vitamin C)')+stat_smooth()
 ```
 
-**Table 1: Tooth Length by Dose and Delivery Method**  
+**Table 1: Odontoblast Cell Length by Dose and Delivery Method**  
 ```{r, results='asis', echo=FALSE}
 data <- ToothGrowth %.%
   group_by(supp, dose) %.%
   summarize(m.length = mean(len),
             sd.length = sd(len))
-names(data)<-c('Method','Dose (mg)','Mean','Standard Deviation')
+names(data)<-c('Method','Dose (mg)','Mean (microns)','Standard Deviation')
 
 pandoc.table(data, big.mark = ',')
 ```
-We observe the tooth length the relationship between the dose and tooth length is positive
+
+We observe the relationship between the dose and tooth cell length is positive (directly related).
 
 ## Comparison of Tooth Growth
-Given that all the guinea pigs were drawn from the same population and the population variance is the same, I assumed the sample variance is constant.  
+Given that all the guinea pigs were drawn from the same population and the population variance is the same, I assumed the sample variance is constant. I conducted t-tests at the 95% confidence level each delivery method by the dose. In all my tests I two sample t-tests.  The null hypothesis is that the sample means are the same and the alternative is that they are different.  *Note: All the T-Tests results can be viewed in the appendix.*
 
-### By Suppliment
-```{r}
-oj <- filter(ToothGrowth, supp == 'OJ') %.% select(len)
-vc <- filter(ToothGrowth, supp == 'VC') %.% select(len)
-t.test(oj,vc)
+### 0.5 mg Dose
+```{r, echo=FALSE}
+tt <- t.test(len ~ supp, data=filter(ToothGrowth,dose==0.5), paired=F, var.equal=T)
 ```
 
-### By Dose
-Text
+The 95% confidence interval runs from `r round(tt$conf.int[1],2)` to `r round(tt$conf.int[2],2)`.  There is a `r round(tt$p.value*100,0)`% chance that the two sets come from the same group.  since the confidence interval does not contain zero and the P-value is under the traditional 5% threshold, we can conclude that there is a difference between the tooth cell length based on the delivery method at the 0.5 mg dose. 
+
+### 1.0 mg Dose
+```{r, echo=FALSE}
+tt <- t.test(len ~ supp, data=filter(ToothGrowth,dose==1.0), paired=F, var.equal=T)
+```
+
+The 95% confidence interval runs from `r round(tt$conf.int[1],2)` to `r round(tt$conf.int[2],2)`.  There is a `r round(tt$p.value*100,0)`% chance that the two sets come from the same group.  Since the confidence interval does not contain zero and the P-value once again is below 5%, we can conclude that there is a difference between the tooth cell length based on the delivery method at the 1.0 mg dose. 
+
+### 2.0 mg Dose
+```{r, echo=FALSE}
+tt <- t.test(len ~ supp, data=filter(ToothGrowth,dose==2.0), paired=F, var.equal=T)
+```
+
+The 95% confidence interval at the 2.0 milligram dose runs from `r round(tt$conf.int[1],2)` to `r round(tt$conf.int[2],2)`.  This contains zero so we cannot reject the null hypothesis that the means are the same.  In fact the P-value suggest a `r round(tt$p.value*100,0)`% chance that the two sets come from the same group. We can conclude that there is *no* difference between the tooth cell length based on the delivery method at the 2.0 mg dose. 
+
+## Conclusion
+Based on the tests preformed on the data we can concluded that there is a difference between the length of tooth cells and the delivery method but only at the 0.5 and 1.0 mg dose.  At the 2.0 mg dose, there is no difference based on the delivery method.
+
+## Appendix
+### 0.5 mg Dose
+```{r}
+t.test(len ~ supp, data=filter(ToothGrowth,dose==0.5), paired=F, var.equal=T)
+```
+
+### 1.0 mg Dose
+```{r}
+t.test(len ~ supp, data=filter(ToothGrowth,dose==1.0), paired=F, var.equal=T)
+```
+
+### 2.0 mg Dose
+```{r}
+t.test(len ~ supp, data=filter(ToothGrowth,dose==2.0), paired=F, var.equal=T)
+```
