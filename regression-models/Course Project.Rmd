@@ -1,0 +1,146 @@
+---
+title: "Regression Models Course Project"
+author: "Mike Silva"
+date: "Monday, November 17, 2014"
+output: rmarkdown::tufte_handout
+---
+```{r, echo=FALSE, message=FALSE}
+#output: pdf_document
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(dplyr)
+library(pander)
+panderOptions('table.split.table', Inf)
+```
+
+```{r, echo=FALSE}
+data(mtcars)
+mtcars$am <- as.factor(mtcars$am)
+levels(mtcars$am) <- c("Automatic", "Manual")
+fit <- lm(mpg ~ am, data = mtcars)
+best.fit <- step(lm(mpg ~ ., data=mtcars), direction=c("both"), trace=0)
+```
+
+# Executive Summary
+
+This analysis seeks to determine if the automatic or manual transmission is better for MPG and to quantify the difference.  Using an ordinary least squares regression model on the mtcars dataset we can conclude:
+
+* After adjusting for vehicle weight and quarter mile time, the manual transmissions provides a statistically significant `r round(coefficients(best.fit)['amManual'],1)` MPG advantage over the automatic transmission.
+
+## About the Data^[A sample of the data is found in Appendix 1]
+
+This analysis was preformed using data extracted from the 1974 Motor Trend US magazine.  It comprises fuel consumption for 32 1973–74 model automobiles and ten aspects of automobile design and performance:
+
+* Number of cylinders
+* Displacement (cu.in.)
+* Gross horsepower
+* Rear axle ratio
+* Weight (lb/1000)
+* 1/4 mile time
+* V/S
+* Transmission
+* Number of forward gears
+* Number of carburetors
+
+\newpage
+
+# Data Processing
+
+The only adjustment made to the data was relabeling the transmission type variable (am) to make it easier to interpret throughout the analysis.
+
+```{r}
+data(mtcars)
+mtcars$am <- as.factor(mtcars$am)
+levels(mtcars$am) <- c("Automatic", "Manual")
+```
+
+# Exploratory Data Analysis
+
+Mean MPG for this dataset is **`r round(mean(mtcars$mpg),2)`** with a standard deviation of **`r round(sd(mtcars$mpg),2)`**.  There are `r nrow(mtcars[mtcars$am=='Automatic',])` cars with an automatic transmission and  `r nrow(mtcars[mtcars$am=='Manual',])` cars with a manual transmission.
+
+```{r, echo=FALSE, fig.margin = TRUE, fig.cap = "MPG histogram"}
+ggplot(mtcars, aes(x=mpg)) + geom_histogram(binwidth=2, colour="black", fill="white") + theme(legend.position = "none") + xlab('MPG') + ylab('Count') + geom_vline(aes(xintercept=mean(mpg, na.rm=T)), color="red", linetype="dashed", size=1)
+```
+
+# Regression Analysis
+
+## Single Variable Analysis
+
+In order to tease out the effect of the type of transmission we first modeled MPG as a function of the type of transmission.  Our null hypothesis is that there is no difference between the two types and the alternate is that there is a difference.  In this model, the intercept represents cars with an automatic transmission:
+
+```{r}
+fit <- lm(mpg ~ am, data = mtcars)
+```
+
+```{r, echo=FALSE, fig.margin = TRUE, fig.cap = "MPG by type of transmission"}
+ggplot(mtcars, aes(factor(am), mpg)) + 
+  geom_boxplot() +
+  theme(legend.position = "none") + xlab('Transmission') + ylab('MPG')
+```
+
+```{r, results='asis', echo=FALSE}
+pander(fit)
+```
+
+With a P-value of about 0.0003 we reject the null hypothsis.  So at first blush it would appear that there is a statistically significant difference and that cars with a manual transmission have `r round(coefficients(fit)['amManual'],1)` MPG advantage than those with automatic transmissions.
+
+This model has an adjusted R squared of about `r round(summary(lm(fit))$adj.r.squared,2)` which suggests there are other factors we are not taking into consideration.  For example the figure 3 illustrates that the vehicle weight has a negative relationship with fuel efficiency.  What happens to the transmission effect when we control for other variables?
+
+```{r, echo=FALSE, fig.margin = TRUE, fig.cap = "MPG by Vehicle Weight"}
+ggplot(mtcars, aes(wt, mpg, color=am)) + geom_point() + xlab('Weight (tons)') + ylab('MPG') + theme(legend.position="bottom") + theme(legend.title=element_blank())
+```
+
+## Multi-Variable Analysis
+
+R's step function was employed to determine which variables should be included in the model.  This function uses a stepwise algorithm to select variables based on the Akaike information criterion (AIC).
+
+```{r}
+best.fit <- step(lm(mpg ~ ., data=mtcars), direction=c("both"), trace=0)
+```
+
+```{r, results='asis', echo=FALSE}
+pander(best.fit)
+```
+
+Once again our null hypothesis is that there is no difference between the two types of transmission and the alternate is that there is a difference.  With a P-value of about 0.047 we would reject the null hypothsis.  This model has an adjusted R squared of about `r round(summary(lm(best.fit))$adj.r.squared,2)` which is a significant improvement relative to the single variable model^[See Appendix 2 for a residual plots of the models]. The manual transmission gives about a `r round(coefficients(best.fit)['amManual'],1)` miles per gallon gain in fuel economy relative to the automatic transmission.
+
+\newpage
+
+# Appendix 1: Sample Data
+
+```{r table-simple, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+pander(head(mtcars, n=29), style = 'rmarkdown')
+```
+
+\newpage
+
+# Appendix 2: Residual Plots
+
+## Single Variable Model
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 3, fig.fullwidth = TRUE}
+df_lm <- ggplot2::fortify(fit) 
+
+p1 <- ggplot(df_lm, aes(.fitted, .resid)) + geom_point() + stat_smooth() + ylim(-4, 4) + xlab('Fitted') + ylab('Residual')
+
+p2 <- ggplot(df_lm, aes(sample = .stdresid)) + stat_qq() + xlab('Theoretical Quantiles') + ylab('Standardized residuals')
+
+p3 <- ggplot(df_lm, aes(.fitted, sqrt(.stdresid))) + geom_point() + stat_smooth(se=FALSE) + ylim(0, 1.5) + xlab('Fitted') + ylab('Sqrt Standardized Residuals')
+
+grid.arrange(p1, p2, p3, ncol=3)
+```
+
+## Multi-Variable Model
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 3, fig.fullwidth = TRUE}
+df_lm <- ggplot2::fortify(best.fit) 
+
+p1 <- ggplot(df_lm, aes(.fitted, .resid)) + geom_point() + stat_smooth() + ylim(-4, 4) + xlab('Fitted') + ylab('Residual')
+
+p2 <- ggplot(df_lm, aes(sample = .stdresid)) + stat_qq() + xlab('Theoretical Quantiles') + ylab('Standardized residuals')
+
+p3 <- ggplot(df_lm, aes(.fitted, sqrt(.stdresid))) + geom_point() + stat_smooth(se=FALSE) + ylim(0, 1.5) + xlab('Fitted') + ylab('Sqrt Standardized Residuals')
+
+grid.arrange(p1, p2, p3, ncol=3)
+```
