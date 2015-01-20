@@ -1,0 +1,36 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Mike Silva"
+date: "January 2015"
+output: html_document
+---
+
+```{r}
+## Download data if it does not exist
+training.file <- 'pml-training.csv'
+if(!file.exists(training.file)){
+  download.file('http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv', training.file)
+}
+testing.file <- 'pml-testing.csv'
+if(!file.exists(testing.file)){
+  download.file('http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv', testing.file)
+}
+## Load data
+training <- read.csv(training.file)
+testing <- read.csv(testing.file)
+```
+
+Exploratory Analysis
+```{r, message=FALSE}
+library(caret)
+library(dplyr)
+summary(training)
+
+
+```
+```{r, eval=FALSE, echo=FALSE}
+#library(rpart)
+#fit <- rpart(classe~., data=training)
+#fit <- train(class ~ ., data=training, method='rf', prox=TRUE)
+#best.fit <- step(lm(classe ~ ., data=training), direction=c("both"), trace=0)
+```
