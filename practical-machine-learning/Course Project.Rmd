@@ -4,9 +4,33 @@ author: "Mike Silva"
 date: "January 2015"
 output: html_document
 ---
+```{r, echo=FALSE, message=FALSE}
+library(pander)
+panderOptions('table.split.table', Inf)
+```
 
+## Background
+<img src="Course Project Image.png" align="left"/> 
+Six young health participants were asked to perform one set of 10 repetitions of the unilateral dumbbell biceps curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). These activites were monitored with on-body wearable accelerometers.
+
+[http://groupware.les.inf.puc-rio.br/har#weight_lifting_exercises]
+
+
+
+## Machine Learning Task
+The task is to develop a model that predicts what activity is being preformed based on the data that was collected.
+
+## Code
+First I loaded the libraries needed for the analysis and set the random number generator seed to 3.14.
+```{r, message=FALSE}
+library(caret)
+library(rattle)
+set.seed(3.14)
+```
+
+### Loading and Cleaning Data
+Next I download the data if it doesn't exist locally:
 ```{r}
-## Download data if it does not exist
 training.file <- 'pml-training.csv'
 if(!file.exists(training.file)){
   download.file('http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv', training.file)
@@ -15,22 +39,79 @@ testing.file <- 'pml-testing.csv'
 if(!file.exists(testing.file)){
   download.file('http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv', testing.file)
 }
-## Load data
-training <- read.csv(training.file)
-testing <- read.csv(testing.file)
 ```
 
-Exploratory Analysis
-```{r, message=FALSE}
-library(caret)
-library(dplyr)
-summary(training)
-
-
+I then loaded the data and standardized the missing values:
+```{r}
+training <- read.csv(training.file, na.strings=c('NA','#DIV/0!',''))
+testing <- read.csv(testing.file, na.strings=c('NA','#DIV/0!',''))
 ```
-```{r, eval=FALSE, echo=FALSE}
-#library(rpart)
-#fit <- rpart(classe~., data=training)
-#fit <- train(class ~ ., data=training, method='rf', prox=TRUE)
-#best.fit <- step(lm(classe ~ ., data=training), direction=c("both"), trace=0)
+
+Initially there are `r ncol(training)` features.  I removed all features that have are nothing but missing values:
+```{r}
+training <- training[,colSums(is.na(training)) == 0]
+testing <- testing[,colSums(is.na(testing)) == 0]
+```
+
+I am left with `r ncol(training)` features.  Next we delete the first 7 features (`r names(training)[1:7]`) as they are not useful in forming a prediction model:
+```{r}
+training <- training[, -c(1:7)]
+testing <- testing[, -c(1:7)]
+```
+
+I am now left with `r ncol(training)` features for the analysis.  A sample of the data is given in the appendix.
+
+## Partitionaning Data Set
+
+The training set contains `r nrow(training)` observations.  In order to cross validate the models I partitioned the training data into two subsets.
+```{r}
+subset <- createDataPartition(y=training$classe, p=0.75, list=FALSE)
+subset.for.training <- training[subset,]
+subset.for.testing <- training[-subset,]
+```
+
+## Modeling Approaches
+
+### Recursive Partitioning and Regression Trees
+I selected this approach to form a baseline.  I did not expect this to provide a reliable prediction model.  However I needed something to compair the other models against.
+```{r, eval=FALSE, message=FALSE}
+rpart.fit <- train(classe~., data=subset.for.training, method='rpart')
+predict.rpart <- predict(rpart.fit, subset.for.testing)
+#fancyRpartPlot(rpart.fit $finalModel)
+confusionMatrix(predict.rpart, subset.for.testing$classe)
+```
+
+```{r, echo=FALSE}
+## Free Up RAM
+rm(rpart.fit)
+```
+
+### Naive Bayes
+I selected this approach because I am a big fan of the Baysian approach in statistical modeling and I wanted to get some practical experience with it.  
+```{r, eval=FALSE, message=FALSE}
+nb.fit <- train(classe ~ ., data=subset.for.training, method="nb")
+predict.nb <- predict(nb.fit, subset.for.testing)
+confusionMatrix(predict.nb, subset.for.testing$classe)
+```
+
+```{r, echo=FALSE}
+## Free Up RAM
+rm(nb.fit)
+```
+
+### Random Forest
+I selected this approach out of curiosity to see if it could out preform the Baysian model.
+```{r, eval=FALSE, message=FALSE}
+rf.fit <- train(classe ~ ., data = subset.for.training, method = 'rf', 
+                trControl = trainControl(method = "cv", number = 4, allowParallel = TRUE))
+predict.rf <- predict(rf.fit, subset.for.testing)
+confusionMatrix(predict.rf, subset.for.testing$classe)
+```
+
+\newpage
+
+# Appendix 1: Sample Data
+
+```{r table-simple, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+pander(head(training), style = 'rmarkdown')
 ```
