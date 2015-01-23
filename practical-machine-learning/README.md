@@ -214,6 +214,9 @@ rf.cm
 
 Because of the high level of accuracy of the random forest model, I chose to use it to predict classify the 20 test cases.
 
+## Out of Sample Error
+The out of sample accuracy rate for the random forest model is 98.99%.  Consequently the out of sample error rate is 1 - 0.9899 or 1.01%.
+
 # Appendix 1: Features
 _roll_belt_, _pitch_belt_, _yaw_belt_, _total_accel_belt_, _gyros_belt_x_, _gyros_belt_y_, _gyros_belt_z_, _accel_belt_x_, _accel_belt_y_, _accel_belt_z_, _magnet_belt_x_, _magnet_belt_y_, _magnet_belt_z_, _roll_arm_, _pitch_arm_, _yaw_arm_, _total_accel_arm_, _gyros_arm_x_, _gyros_arm_y_, _gyros_arm_z_, _accel_arm_x_, _accel_arm_y_, _accel_arm_z_, _magnet_arm_x_, _magnet_arm_y_, _magnet_arm_z_, _roll_dumbbell_, _pitch_dumbbell_, _yaw_dumbbell_, _total_accel_dumbbell_, _gyros_dumbbell_x_, _gyros_dumbbell_y_, _gyros_dumbbell_z_, _accel_dumbbell_x_, _accel_dumbbell_y_, _accel_dumbbell_z_, _magnet_dumbbell_x_, _magnet_dumbbell_y_, _magnet_dumbbell_z_, _roll_forearm_, _pitch_forearm_, _yaw_forearm_, _total_accel_forearm_, _gyros_forearm_x_, _gyros_forearm_y_, _gyros_forearm_z_, _accel_forearm_x_, _accel_forearm_y_, _accel_forearm_z_, _magnet_forearm_x_, _magnet_forearm_y_, _magnet_forearm_z_ and _classe_
 

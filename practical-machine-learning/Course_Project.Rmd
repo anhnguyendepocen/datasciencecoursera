@@ -1,11 +1,7 @@
----
-title: "Practical Machine Learning Course Project"
-author: "Mike Silva"
-date: "January 2015"
-output:
-  html_document:
-    keep_md: yes
----
+# Practical Machine Learning Course Project
+Author: Mike Silva  
+Date:  January 2015
+
 ```{r, echo=FALSE, message=FALSE}
 library(pander)
 panderOptions('table.split.table', Inf)
@@ -109,7 +105,6 @@ rf.cm
 ```
 
 ## Model Evaluation
-
 ```{r, echo=FALSE}
 plot.data <- data.frame('Model'=character(), 'Accuracy'=numeric(), stringsAsFactors=FALSE)
 plot.data[1,1] <- 'RPART'
@@ -124,7 +119,12 @@ ggplot(data=plot.data, aes(x=Model, y=Accuracy, fill=Model)) + geom_bar(stat='id
 
 Because of the high level of accuracy of the random forest model, I chose to use it to predict classify the 20 test cases.
 
-```{r, eval=FALSE, echo=FALSE, message=FALSE}
+## Out of Sample Error
+The out of sample accuracy rate for the random forest model is `r rf.cm$overall[1]*100`%.  Consequently the out of sample error rate is 1 - `r rf.cm$overall[1]` or `r (1-rf.cm$overall[1])*100`%.
+
+## Write Files
+The final step is to write out the predictions for submission:  
+```{r, eval=FALSE, message=FALSE}
 # Prepare files for submission
 pml_write_files = function(x){
   n = length(x)
@@ -141,15 +141,12 @@ pml_write_files(predict(rf.fit, testing))
 rm(rf.fit)
 ```
 
-\newpage
-
-# Appendix 1: Features
+# Appendix 1: Features  
 ```{r, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
 pander(names(training), style = 'rmarkdown')
 ```
 
-# Appendix 2: Sample Data
-
+# Appendix 2: Sample Data  
 ```{r table-simple, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
 pander(head(training), style = 'rmarkdown')
 ```
