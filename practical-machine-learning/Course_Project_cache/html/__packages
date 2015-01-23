@@ -1,0 +1,10 @@
+base
+pander
+lattice
+ggplot2
+caret
+rattle
+rpart
+MASS
+klaR
+randomForest
