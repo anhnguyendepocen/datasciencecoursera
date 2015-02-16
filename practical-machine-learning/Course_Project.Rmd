@@ -1,11 +1,7 @@
----
-title: "Practical Machine Learning Course Project"
-author: "Mike Silva"
-date: "January 2015"
-output:
-  html_document:
-    keep_md: yes
----
+# Practical Machine Learning Course Project
+Author: Mike Silva  
+Date:  January 2015
+
 ```{r, echo=FALSE, message=FALSE}
 library(pander)
 panderOptions('table.split.table', Inf)
@@ -13,12 +9,12 @@ panderOptions('table.split.table', Inf)
 
 ## Background
 <img src="Course_Project_files/figure-html/image-file.png" align="left"/> 
-Six young health participants were asked to perform one set of 10 repetitions of the unilateral dumbbell biceps curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). These activites were monitored with on-body wearable accelerometers.
+Six young health participants were asked to perform one set of 10 repetitions of the unilateral dumbbell biceps curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). These activities were monitored with on-body wearable accelerometers.
 
-The task that I intend to preform is to develop a model that predicts what activity is being preformed based on the data that was collected, and use this model to clasify twenty cases.  I will accomplish this by selecting the model that predicts with the highest degree of accuracy.
+The task that I intend to preform is to develop a model that predicts what activity is being preformed based on the data that was collected, and use this model to classify twenty cases.  I will accomplish this by selecting the model that predicts with the highest degree of accuracy.
 
 ## Feature Selection
-I begin the process by loading the libraries I will need throughout the analysis.  As I want my research to be reproducable I will set the random number genration seed to 3.14:
+I begin the process by loading the libraries I will need throughout the analysis.  As I want my research to be reproducible I will set the random number generation seed to 3.14:
 ```{r, message=FALSE}
 library(caret)
 library(rattle)
@@ -57,7 +53,7 @@ testing <- testing[, -c(1:7)]
 
 I am now left with a pool of `r ncol(training)` possible features for inclusion in the prediction model.  A list of the feature and a sample of the data is given in the appendix.
 
-## Partitionaning Data Set
+## Partitioning Data Set
 
 The data set that I am going to create my prediction model from contains `r nrow(training)` observations.  In order to cross validate the models I partitioned this data set into two subsets.  I used 60% of the data for model training and 40% for cross validation.
 ```{r}
@@ -66,11 +62,11 @@ subset.for.training <- training[subset,]
 subset.for.testing <- training[-subset,]
 ```
 
-## Modeling Approaches
+## Modelling Approaches
 
 ### Recursive Partitioning and Regression Trees
-I selected this approach as a way to form a baseline.  I did not expect this to provide a reliable prediction model.  However I needed something to compair the other models against.
-```{r, eval=FALSE, cache=TRUE, message=FALSE}
+I selected this approach as a way to form a baseline.  I did not expect this to provide a reliable prediction model.  However I needed something to compare the other models against.
+```{r, cache=TRUE, message=FALSE}
 rpart.fit <- train(classe ~ ., data=subset.for.training, method='rpart')
 predict.rpart <- predict(rpart.fit, subset.for.testing)
 fancyRpartPlot(rpart.fit $finalModel)
@@ -78,38 +74,57 @@ rpart.cm <- confusionMatrix(predict.rpart, subset.for.testing$classe)
 rpart.cm
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 ## Free Up RAM
 rm(rpart.fit)
 ```
 
 ### Naive Bayes
-I selected this approach because I am a big fan of the Baysian approach in statistical modeling and I wanted to get some practical experience with it.  
-```{r, eval=FALSE, cache=TRUE, message=FALSE}
+I selected this approach because I am a big fan of the Bayesian approach in statistical modelling and I wanted to get some practical experience with it.    
+```{r, cache=TRUE, message=FALSE}
 nb.fit <- train(classe ~ ., data=subset.for.training, method="nb")
 predict.nb <- predict(nb.fit, subset.for.testing)
 nb.cm <- confusionMatrix(predict.nb, subset.for.testing$classe)
 nb.cm
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 ## Free Up RAM
 rm(nb.fit)
 ```
 
 ### Random Forest
-I selected this approach out of curiosity to see if it could out preform the Baysian model.
-```{r, eval=FALSE, cache=TRUE, message=FALSE}
+I selected this approach out of curiosity to see if it could out preform the Bayesian model.
+```{r, cache=TRUE, message=FALSE}
 rf.fit <- train(classe ~ ., data = subset.for.training, method = 'rf', 
-                trControl = trainControl(method = "cv", number = 4, allowParallel = TRUE))
+                trControl = trainControl(method = "cv", number = 4, allowParallel = TRUE), importance=TRUE)
 predict.rf <- predict(rf.fit, subset.for.testing)
 rf.cm <- confusionMatrix(predict.rf, subset.for.testing$classe)
+rm.imp <- varImp(rf.fit)
 rf.cm
 ```
 
-Because of the high level of accuracy I used this model to predict classify the 20 test cases.
+## Model Evaluation
+```{r, echo=FALSE}
+plot.data <- data.frame('Model'=character(), 'Accuracy'=numeric(), stringsAsFactors=FALSE)
+plot.data[1,1] <- 'RPART'
+plot.data[1,2] <- rpart.cm$overall[1]
+plot.data[2,1] <- 'Naive Bayes'
+plot.data[2,2] <- nb.cm$overall[1]
+plot.data[3,1] <- 'Random Forest'
+plot.data[3,2] <- rf.cm$overall[1]
+#plot.data$Model <- as.factor(plot.data$Model)
+ggplot(data=plot.data, aes(x=Model, y=Accuracy, fill=Model)) + geom_bar(stat='identity') + guides(fill=FALSE) + ggtitle('Prediction Model Accuracy Comparison')
+```
 
-```{r, echo=FALSE, message=FALSE}
+Because of the high level of accuracy of the random forest model, I chose to use it to predict classify the 20 test cases.
+
+## Out of Sample Error
+The out of sample accuracy rate for the random forest model is `r rf.cm$overall[1]*100`%.  Consequently the out of sample error rate is 1 - `r rf.cm$overall[1]` or `r (1-rf.cm$overall[1])*100`%.
+
+## Write Files
+The final step is to write out the predictions for submission:  
+```{r, eval=FALSE, message=FALSE}
 # Prepare files for submission
 pml_write_files = function(x){
   n = length(x)
@@ -119,20 +134,19 @@ pml_write_files = function(x){
   }
 }
 pml_write_files(predict(rf.fit, testing))
+```
 
+```{r, echo=FALSE, message=FALSE}
+## Free Up RAM
 rm(rf.fit)
 ```
 
-
-\newpage
-
-# Appendix 1: Features
+# Appendix 1: Features  
 ```{r, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
 pander(names(training), style = 'rmarkdown')
 ```
 
-# Appendix 2: Sample Data
-
+# Appendix 2: Sample Data  
 ```{r table-simple, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
 pander(head(training), style = 'rmarkdown')
 ```
