@@ -1,4 +1,3 @@
-
 # This is the server logic for a Shiny web application.
 # You can find out more about building applications with Shiny here:
 #
@@ -7,6 +6,15 @@
 
 library(shiny)
 
+# This function calculates weighted average scores
+getScores <- function(df){
+  df <- df %>%
+    group_by(movie_id) %>%
+    summarise(score = sum(user.weight * adj.rating), reviews = n()) %>%
+    mutate(rating = score / reviews)
+  df
+}
+
 shinyServer(function(input, output) {
   
   score.data <- reactive({
@@ -14,39 +22,14 @@ shinyServer(function(input, output) {
       filter(Origin == input$msa.filter)
   })
   
-  # This function calculates scores
-  # It allows for subsetting by user_id
-  # Scores are the average ranking
-  getScores <- function(user_id.filter=NA){
-    d <- data # defined in global.R
-    if(!is.na(user_id.filter)){
-      d <- filter(d, user_id %in% user_id.filter)
-    }
-    d %>%
-      group_by(movie_id) %>%
-      summarise(agg.rating = sum(rating), count = n()) %>%
-      mutate(score=agg.rating / count)
-      
-  }
-  
   getRecommendationTable <- reactive({
-    titles <- movies %>%
-      select(id, title) %>%
-      mutate(movie_id = id)
+      
+    recommendation.table <- merge(getScores(data), titles) %>%
+      arrange(-rating, -reviews, titles) %>%
+      mutate(rating = round(rating, 2)) %>%
+      select(title, rating, reviews)
     
-    all.scores <- getScores()
-    names(all.scores)[4] <- c('overall.score')
-    
-    recommendation.table <- getScores(getReviewerFilter())
-    recommendation.table <- merge(merge(recommendation.table, titles), all.scores) %>%
-      filter(!movie_id == input$movie_id) %>%
-      arrange(-score, -agg.rating) %>%
-      select(title, score, overall.score)
-    
-    names(recommendation.table) <- c('Movie Title', 'Rating Given By People Like You', 'Overall Rating')
-    ## Let's not overwhelm the user with recommendations
-    if(nrow(recommendation.table) > 100)
-      recommendation.table <- recommendation.table[1:100,]
+    names(recommendation.table) <- c('Movie Title', 'Rating', 'Reviews')
     
     recommendation.table
   })
@@ -68,6 +51,11 @@ shinyServer(function(input, output) {
     
     ggplot(ggplot.data, aes(x=rating,fill=rating)) +geom_bar(stat='bin') + theme(legend.position='none')
 
+  })
+  
+  output$all.ratings <- renderPlot({
+    # Draw scaterplot
+    ggplot(getScores(data), aes(x=rating, y=reviews)) + geom_point()
   })
   
   output$recommendation.table <- renderDataTable(
