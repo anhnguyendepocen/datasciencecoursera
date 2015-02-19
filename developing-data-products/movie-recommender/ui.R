@@ -7,36 +7,33 @@
 library(shiny)
 
 shinyUI(fluidPage(
-
-  # Application title
-  titlePanel('Movie Recommender'),
-
-  # Sidebar with a slider input for number of bins
-  sidebarLayout(
-    sidebarPanel(
-      selectInput('genre.filter', "I'm in the mood for", c('Anything', genres)),
-      selectInput('movie_id.1', 'Movie 1:', c('Pick a Movie',dropdown)),
-      sliderInput('rating.1', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=5),
-      selectInput('movie_id.2', 'Movie 2:', c('Pick a Movie',dropdown)), 
-      sliderInput('rating.2', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=5),
-      selectInput('movie_id.3', 'Movie 3:', c('Pick a Movie',dropdown)), 
-      sliderInput('rating.3', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=5)
-
-      
+  titlePanel("Movie Recommender"),
+  fluidRow(
+    column(3,
+           wellPanel(
+             selectInput('genre.filter', "I'm in the mood for", c('Anything', genres))
+           ),
+           wellPanel(
+             h4("I've Seen"),
+             selectInput('movie_id.1', 'Movie 1:', c('Pick a Movie',dropdown)),
+             sliderInput('rating.1', "Rate It:", min=1, max=5, step=1, value=5),
+             selectInput('movie_id.2', 'Movie 2:', c('Pick a Movie',dropdown)), 
+             sliderInput('rating.2', "Rate It:", min=1, max=5, step=1, value=5),
+             selectInput('movie_id.3', 'Movie 3:', c('Pick a Movie',dropdown)), 
+             sliderInput('rating.3', "Rate It:", min=1, max=5, step=1, value=5)
+           )
     ),
-
-    # Show a plot of the generated distribution
-    mainPanel(
-      tabsetPanel(type = 'tabs', 
-                  tabPanel('Directions', 
-                           h3('Introduction')
-                  ),
-                  tabPanel('Your Recommendations', dataTableOutput('recommendation.table')),
-                  tabPanel("Reviewer's Ratings", 
-                           #plotOutput('all.ratings')
-                           ggvisOutput('plot1')
-                           )#plotOutput('rating.hist'))
-      )
-    )
+    column(9, 
+           tabsetPanel(type = 'tabs', 
+                       tabPanel('Directions',
+                                h3('Introduction'),
+                                p("This app gives you the best possible movie recommendations in seconds with minimal effort on your part."),
+                                p("Select a couple of movies you have seen and rate them on a 1 to 5 star scale (5 means you love it)."),
+                                p("Using our proprietary algorithm we will search through our database of close to ½ million reviews of over 1,000 films to find the best recommendations.  You can filter the movie recommendations by genre at any time.")
+                       ),
+                       tabPanel('We Recommend You See', dataTableOutput('recommendation.table')),
+                       tabPanel("Reviewer's Ratings", ggvisOutput('plot1'))
+                      )
+           )
   )
 ))

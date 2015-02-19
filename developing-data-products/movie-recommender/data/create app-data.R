@@ -5,15 +5,15 @@
 
 library(dplyr)
 library(tidyr)
-library(recommenderlab)
 library(reshape)
 library(reshape2)
 
 setwd('~/GitHub/datasciencecoursera/developing-data-products/movie-recommender/data')
 
-## Read in the MovieLens 100K data (downloaded from http://grouplens.org/datasets/movielens/)
-data <- read.table('u.data', header=FALSE, stringsAsFactors=FALSE)
-names(data) <- c('user_id', 'movie_id', 'rating' ,'timestamp')
+## Read in the MovieLens data (downloaded from http://grouplens.org/datasets/movielens/)
+data <- read.table('ratings.dat', header=FALSE, sep=":", stringsAsFactors=FALSE)
+names(data) <- c('user_id', 'drop1', 'movie_id', 'drop2', 'rating' , 'drop3', 'timestamp')
+data <- select(data, user_id, movie_id, rating)
 
 genres <- read.csv('u.genre', header=FALSE, sep='|', stringsAsFactors=FALSE)
 genres <- genres[2:19,1] # Removing Unkown
@@ -49,13 +49,15 @@ movies <- movies %>%
 data <- merge(data, corrections, all.x=TRUE)
 data[!is.na(data$new.id),]$movie_id <- data[!is.na(data$new.id),]$new.id
 data <- data %>%
-  select(movie_id, user_id, rating)
+  filter(movie_id %in% movies$id) %>%
+  select(movie_id, user_id, rating) %>%
+  unique()
 
-## We only want movies with 200+ reviews
+## We only want movies with 400+ reviews to be included in the drop down
 enough.reviews <- data %>%
   group_by(movie_id) %>%
   summarise(count = n()) %>%
-  filter(count > 50)
+  filter(count >= 400)
 
 ## We only want to prompt the user to rate films we have all ratings for (no NA's)
 all.ratings <- data %>%
@@ -80,24 +82,23 @@ review.dropdown <- movies %>%
 dropdown <- review.dropdown$id
 names(dropdown) <- review.dropdown$title
 
-## Subset the data and movies 
+## We don't want movies with a few good reviews to trump more robust
+## agerage reviews.
+enough.reviews <- data %>%
+  group_by(movie_id) %>%
+  summarise(count = n()) %>%
+  filter(count >= 100)
+
 data <- data %>%
-  filter(movie_id %in% enough.reviews$movie_id) %>%
-  unique() ## Remove duplicates
+  filter(movie_id %in% all.ratings$movie_id)%>%
+  filter(movie_id %in% enough.reviews$movie_id)
 
 movies <- movies %>%
+  filter(id %in% all.ratings$movie_id)%>%
   filter(id %in% enough.reviews$movie_id)
 
-## Build a recommender model based on a sparce rating matrix
-m.data <- melt(data, id=c('movie_id', 'user_id'))
-fit <- as.data.frame(cast(m.data, user_id ~ movie_id, mean, fill=NA)) %>%
-  select(-contains('user_id')) %>%
-  as.matrix() %>%
-  as(., 'realRatingMatrix') %>%
-  Recommender(., method = 'POPULAR')
-
 ## Clean up R Environment
-rm(corrections, dup.ids, dup.titles, enough.reviews, all.ratings, review.dropdown, m.data)
+rm(corrections, dup.ids, dup.titles, enough.reviews, all.ratings, review.dropdown)
 
 ## Save Global Environment
 save.image('app-data.RData')

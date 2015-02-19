@@ -1,9 +1,7 @@
 ## Load libraries
 library(dplyr)
 library(tidyr)
-#library(ggplot2)
 library(ggvis)
-library(recommenderlab)
 library(reshape)
 library(reshape2)
 

@@ -6,95 +6,89 @@
 
 library(shiny)
 
-# # This function calculates weighted average scores
-# getScores <- function(df){
-#   df <- df %>%
-#     group_by(movie_id) %>%
-#     summarise(score = sum(user.weight * adj.rating), reviews = n()) %>%
-#     mutate(rating = score / reviews)
-#   df
-# }
-
 shinyServer(function(input, output) {
   
   getRecommendationTable <- reactive({
-    recommendations <- predict(fit, user.ratings(), n=500) %>%
-      bestN(., n=500) %>%
-      as(., "list")
-    recommendation.table <- as.data.frame(recommendations)
-    names(recommendation.table) <- c('id')
-    recommendation.table$order <- 1:nrow(recommendation.table)
-    
+    ## We'll need the movie titles
     titles <- movies %>%
-      select(id, title)
+      mutate(movie_id = id) %>%
+      select(movie_id, title)
     
-    rankings <- plot.data() %>%
-      mutate(id = movie_id) %>%
-      select(id, avg.rating, reviews)
-    
-    recommendation.table <- merge(merge(recommendation.table, titles), rankings) %>%
-      arrange(order) %>%
-      select(title, avg.rating, reviews)
-    names(recommendation.table) <- c('Movie Title','Average Rating','Reviewers')
-    recommendation.table
-  })
-#   
-#   # This function returns the user_id's that gave a movie the same rating
-#   getReviewerFilter <- reactive({
-#     r <- data %>% # defined in global.R
-#       filter(movie_id == input$movie_id) %>%
-#       filter(rating == input$rating) %>%
-#       select(user_id)
-#     r$user_id
-#   })
+    ## This takes into consideration the genre filter
+    include <- plot.data() %>%
+      filter(stroke ==1)
 
-  user.ratings <- function(){
-    user.ratings <- movies %>%
-      select(id) %>%
-      mutate(rating=NA)
+    ## Ranks are computed based on a weighted average
+    ## Reviewers like the app user have more weight
+    ranking.data <- data %>%
+      filter(movie_id %in% include$movie_id) %>%
+      merge(., reviewers.like.me()) %>%
+      mutate(rating = rating * similarity) %>%
+      group_by(movie_id) %>%
+      summarise(rating = sum(rating), count=n()) %>%
+      mutate(score = rating / count) %>%
+      select(movie_id, score, count) %>%
+      merge(., titles) %>%
+      arrange(-score, -count)
+    
+    ## Remove films seen by shiny app user
     if(!input$movie_id.1 == 'Pick a Movie'){
-       user.ratings <- user.ratings %>%
-         mutate(rating = ifelse(id == input$movie_id.1, input$rating.1, rating))
+      ranking.data <- ranking.data[ranking.data$movie_id != input$movie_id.1,]
     }
     if(!input$movie_id.2 == 'Pick a Movie'){
-      user.ratings <- user.ratings %>%
-        mutate(rating = ifelse(id == input$movie_id.2, input$rating.2, rating))
+      ranking.data <- ranking.data[ranking.data$movie_id != input$movie_id.2,]
     }
     if(!input$movie_id.3 == 'Pick a Movie'){
-      user.ratings <- user.ratings %>%
-        mutate(rating = ifelse(id == input$movie_id.3, input$rating.3, rating))
+      ranking.data <- ranking.data[ranking.data$movie_id != input$movie_id.3,]
     }
-    user.ratings$user_id <- 'user'
-    m.data <- melt(user.ratings, id=c('id', 'user_id'))
-    user.ratings <- as.data.frame(cast(m.data, user_id ~ id, mean, fill=NA)) %>%
-      select(-contains('user_id')) %>%
-      as.matrix() %>%
-      as(., 'realRatingMatrix')
-    user.ratings
-  }
-# 
-#   output$rating.hist <- renderPlot({
-# 
-#     ggplot.data <- data %>%
-#       filter(movie_id == input$movie_id)
-#     ggplot.data$rating <- as.factor(ggplot.data$rating)
-#     
-#     ggplot(ggplot.data, aes(x=rating,fill=rating)) +geom_bar(stat='bin') + theme(legend.position='none')
-# 
-#   })
-#   
-#   output$all.ratings <- renderPlot({
-#     plot.data <- data %>%
-#       group_by(movie_id) %>%
-#       summarise(score = sum(rating), reviews = n()) %>%
-#       mutate(rating = score / reviews)
-#     # Draw scaterplot
-#     ggplot(plot.data) + geom_point(aes(x=rating, y=reviews), color='gray')
-#   })
+    
+    ## Shorten the list if needed
+    if(nrow(ranking.data)> 500){
+      ranking.data <- ranking.data[1:500,]
+    }
+    
+    ## Format data for table
+    ranking.data <- ranking.data %>%
+      select(title)
+    names(ranking.data) <- c('Movie Title')
+    ranking.data
+  })
+  
+  reviewers.like.me <- reactive({
+    ## This function returns a user id and a number that indicates how similar 
+    ## the reviewer is to the shiny app user
+    rlm <- data %>%
+      select(user_id) %>%
+      unique() %>%
+      arrange(user_id) %>%
+      mutate(similarity = 1)
+    if(!input$movie_id.1 == 'Pick a Movie'){
+      temp <- data %>%
+        filter(movie_id == input$movie_id.1) %>%
+        filter(rating == input$rating.1) %>%
+        select(user_id)
+      rlm[rlm$user_id %in% temp$user_id,]$similarity <- rlm[rlm$user_id %in% temp$user_id,]$similarity * 10
+    }
+    if(!input$movie_id.2 == 'Pick a Movie'){
+      temp <- data %>%
+        filter(movie_id == input$movie_id.2) %>%
+        filter(rating == input$rating.2) %>%
+        select(user_id)
+      rlm[rlm$user_id %in% temp$user_id,]$similarity <- rlm[rlm$user_id %in% temp$user_id,]$similarity * 10
+    }
+    if(!input$movie_id.3 == 'Pick a Movie'){
+      temp <- data %>%
+        filter(movie_id == input$movie_id.3) %>%
+        filter(rating == input$rating.3) %>%
+        select(user_id)
+      rlm[rlm$user_id %in% temp$user_id,]$similarity <- rlm[rlm$user_id %in% temp$user_id,]$similarity * 10
+    }
+    
+    rlm
+  })
   
   output$recommendation.table <- renderDataTable(
     getRecommendationTable(),
-    #user.ratings(),
     options = list(
       paging=FALSE,
       searching = FALSE,
