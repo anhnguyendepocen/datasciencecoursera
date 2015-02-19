@@ -6,6 +6,10 @@
 library(dplyr)
 library(tidyr)
 library(recommenderlab)
+library(reshape)
+library(reshape2)
+
+setwd('~/GitHub/datasciencecoursera/developing-data-products/movie-recommender/data')
 
 ## Read in the MovieLens 100K data (downloaded from http://grouplens.org/datasets/movielens/)
 data <- read.table('u.data', header=FALSE, stringsAsFactors=FALSE)
@@ -90,7 +94,7 @@ fit <- as.data.frame(cast(m.data, user_id ~ movie_id, mean, fill=NA)) %>%
   select(-contains('user_id')) %>%
   as.matrix() %>%
   as(., 'realRatingMatrix') %>%
-  Recommender(., method = "POPULAR")
+  Recommender(., method = 'POPULAR')
 
 ## Clean up R Environment
 rm(corrections, dup.ids, dup.titles, enough.reviews, all.ratings, review.dropdown, m.data)

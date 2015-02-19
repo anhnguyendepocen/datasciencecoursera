@@ -16,11 +16,11 @@ shinyUI(fluidPage(
     sidebarPanel(
       selectInput('genre.filter', "I'm in the mood for", c('Anything', genres)),
       selectInput('movie_id.1', 'Movie 1:', c('Pick a Movie',dropdown)),
-      sliderInput('rating.1', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=1),
+      sliderInput('rating.1', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=5),
       selectInput('movie_id.2', 'Movie 2:', c('Pick a Movie',dropdown)), 
-      sliderInput('rating.2', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=1),
+      sliderInput('rating.2', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=5),
       selectInput('movie_id.3', 'Movie 3:', c('Pick a Movie',dropdown)), 
-      sliderInput('rating.3', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=1)
+      sliderInput('rating.3', "Rate It: (1-Don't Like, 5-Love It)", min=1, max=5, step=1, value=5)
 
       
     ),

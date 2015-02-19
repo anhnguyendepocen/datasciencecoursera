@@ -18,67 +18,83 @@ library(shiny)
 shinyServer(function(input, output) {
   
   getRecommendationTable <- reactive({
-      
-#     recommendation.table <- merge(getScores(data), titles) %>%
-#       arrange(-rating, -reviews, titles) %>%
-#       mutate(rating = round(rating, 2)) %>%
-#       select(title, rating, reviews)
-#     
-#     names(recommendation.table) <- c('Movie Title', 'Rating', 'Reviews')
-#     
-#     recommendation.table
+    recommendations <- predict(fit, user.ratings(), n=500) %>%
+      bestN(., n=500) %>%
+      as(., "list")
+    recommendation.table <- as.data.frame(recommendations)
+    names(recommendation.table) <- c('id')
+    recommendation.table$order <- 1:nrow(recommendation.table)
+    
+    titles <- movies %>%
+      select(id, title)
+    
+    rankings <- plot.data() %>%
+      mutate(id = movie_id) %>%
+      select(id, avg.rating, reviews)
+    
+    recommendation.table <- merge(merge(recommendation.table, titles), rankings) %>%
+      arrange(order) %>%
+      select(title, avg.rating, reviews)
+    names(recommendation.table) <- c('Movie Title','Average Rating','Reviewers')
+    recommendation.table
   })
-  
-  # This function returns the user_id's that gave a movie the same rating
-  getReviewerFilter <- reactive({
-    r <- data %>% # defined in global.R
-      filter(movie_id == input$movie_id) %>%
-      filter(rating == input$rating) %>%
-      select(user_id)
-    r$user_id
-  })
+#   
+#   # This function returns the user_id's that gave a movie the same rating
+#   getReviewerFilter <- reactive({
+#     r <- data %>% # defined in global.R
+#       filter(movie_id == input$movie_id) %>%
+#       filter(rating == input$rating) %>%
+#       select(user_id)
+#     r$user_id
+#   })
 
-  user.ratings <- reactive({
+  user.ratings <- function(){
     user.ratings <- movies %>%
       select(id) %>%
       mutate(rating=NA)
-#     if(!input$movie.id.1 == 'Pick a Movie'){
-#       user.ratings <- user.ratings %>%
-#         mutate(rating = ifelse(id == input$movie.id.1, input$rating.1, rating))
-#     }
-#     if(!input$movie.id.2 == 'Pick a Movie'){
-#       user.ratings <- user.ratings %>%
-#         mutate(rating = ifelse(id == input$movie.id.2, input$rating.2, rating))
-#     }
-#     if(!input$movie.id.3 == 'Pick a Movie'){
-#       user.ratings <- user.ratings %>%
-#         mutate(rating = ifelse(id == input$movie.id.3, input$rating.3, rating))
-#     }
+    if(!input$movie_id.1 == 'Pick a Movie'){
+       user.ratings <- user.ratings %>%
+         mutate(rating = ifelse(id == input$movie_id.1, input$rating.1, rating))
+    }
+    if(!input$movie_id.2 == 'Pick a Movie'){
+      user.ratings <- user.ratings %>%
+        mutate(rating = ifelse(id == input$movie_id.2, input$rating.2, rating))
+    }
+    if(!input$movie_id.3 == 'Pick a Movie'){
+      user.ratings <- user.ratings %>%
+        mutate(rating = ifelse(id == input$movie_id.3, input$rating.3, rating))
+    }
+    user.ratings$user_id <- 'user'
+    m.data <- melt(user.ratings, id=c('id', 'user_id'))
+    user.ratings <- as.data.frame(cast(m.data, user_id ~ id, mean, fill=NA)) %>%
+      select(-contains('user_id')) %>%
+      as.matrix() %>%
+      as(., 'realRatingMatrix')
     user.ratings
-  })
-
-  output$rating.hist <- renderPlot({
-
-    ggplot.data <- data %>%
-      filter(movie_id == input$movie_id)
-    ggplot.data$rating <- as.factor(ggplot.data$rating)
-    
-    ggplot(ggplot.data, aes(x=rating,fill=rating)) +geom_bar(stat='bin') + theme(legend.position='none')
-
-  })
-  
-  output$all.ratings <- renderPlot({
-    plot.data <- data %>%
-      group_by(movie_id) %>%
-      summarise(score = sum(rating), reviews = n()) %>%
-      mutate(rating = score / reviews)
-    # Draw scaterplot
-    ggplot(plot.data) + geom_point(aes(x=rating, y=reviews), color='gray')
-  })
+  }
+# 
+#   output$rating.hist <- renderPlot({
+# 
+#     ggplot.data <- data %>%
+#       filter(movie_id == input$movie_id)
+#     ggplot.data$rating <- as.factor(ggplot.data$rating)
+#     
+#     ggplot(ggplot.data, aes(x=rating,fill=rating)) +geom_bar(stat='bin') + theme(legend.position='none')
+# 
+#   })
+#   
+#   output$all.ratings <- renderPlot({
+#     plot.data <- data %>%
+#       group_by(movie_id) %>%
+#       summarise(score = sum(rating), reviews = n()) %>%
+#       mutate(rating = score / reviews)
+#     # Draw scaterplot
+#     ggplot(plot.data) + geom_point(aes(x=rating, y=reviews), color='gray')
+#   })
   
   output$recommendation.table <- renderDataTable(
-    #getRecommendationTable(),
-    user.ratings(),
+    getRecommendationTable(),
+    #user.ratings(),
     options = list(
       paging=FALSE,
       searching = FALSE,

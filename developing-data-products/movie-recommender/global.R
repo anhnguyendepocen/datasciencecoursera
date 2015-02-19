@@ -1,8 +1,11 @@
+## Load libraries
 library(dplyr)
 library(tidyr)
-library(ggplot2)
+#library(ggplot2)
 library(ggvis)
 library(recommenderlab)
+library(reshape)
+library(reshape2)
 
 ## Load preprocessed data
 ## see data/create app-data.R for the preprocessing steps
