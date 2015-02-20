@@ -24,7 +24,14 @@ How Does it Work?
 
 Using a proprietary algorithm, **Movie Recommender** scores over 800 movies using about 500,000 MovieLens reviews.
 
-![plot of chunk unnamed-chunk-1](movie-recommender-figure/unnamed-chunk-1-1.png) 
+```{r, message=FALSE, echo=FALSE}
+library(dplyr)
+library(ggplot2) 
+
+plot.data <- read.csv('plot.data.csv')
+
+ggplot(plot.data, aes(x=avg.rating, y=reviews, alpha=0.5)) + geom_point() + ggtitle('Average Ratings of Movies (On a 1-5 Scale)') + xlab('Rating') + ylab('Number of Reviews') + theme(legend.position='none')
+```
 
 What Else Can it Do?
 ========================================================
