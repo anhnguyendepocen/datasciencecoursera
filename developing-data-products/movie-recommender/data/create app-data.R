@@ -8,19 +8,17 @@ library(tidyr)
 library(reshape)
 library(reshape2)
 
-setwd('~/GitHub/datasciencecoursera/developing-data-products/movie-recommender/data')
-
 ## Read in the MovieLens data (downloaded from http://grouplens.org/datasets/movielens/)
-data <- read.table('ratings.dat', header=FALSE, sep=":", stringsAsFactors=FALSE)
+data <- read.table('data/ratings.dat', header=FALSE, sep=":", stringsAsFactors=FALSE)
 names(data) <- c('user_id', 'drop1', 'movie_id', 'drop2', 'rating' , 'drop3', 'timestamp')
 data <- select(data, user_id, movie_id, rating)
 
-genres <- read.csv('u.genre', header=FALSE, sep='|', stringsAsFactors=FALSE)
+genres <- read.csv('data/u.genre', header=FALSE, sep='|', stringsAsFactors=FALSE)
 genres <- genres[2:19,1] # Removing Unkown
 
-movies <- read.csv('u.item', header=FALSE, stringsAsFactors=FALSE, sep='|')
+movies <- read.csv('data/u.item', header=FALSE, stringsAsFactors=FALSE, sep='|')
 names(movies) <- c('id', 'title', 'release_date', 'video_release_date', 'IMDb_url', 'unknown', genres)
-
+movies$title <- enc2utf8(movies$title)
 ## There are duplicate records in the movies data frame so we need to correct it
 dup.titles <- movies %>%
   group_by(title) %>%
@@ -41,9 +39,10 @@ corrections <- corrections[,2:3]
 
 dup.ids <- corrections$movie_id
 
-## Remove the duplicate movies
+## Remove the duplicate movies and the unknown title
 movies <- movies %>%
-  filter(!id %in% dup.ids)
+  filter(!id %in% dup.ids) %>%
+  filter(title != 'unknown')
 
 ## Correct the movie_id
 data <- merge(data, corrections, all.x=TRUE)
@@ -101,4 +100,4 @@ movies <- movies %>%
 rm(corrections, dup.ids, dup.titles, enough.reviews, all.ratings, review.dropdown)
 
 ## Save Global Environment
-save.image('app-data.RData')
+save.image('data/app-data.RData')
