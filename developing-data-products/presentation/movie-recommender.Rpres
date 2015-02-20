@@ -27,9 +27,7 @@ Using a proprietary algorithm, **Movie Recommender** scores over 800 movies usin
 ```{r, message=FALSE, echo=FALSE}
 library(dplyr)
 library(ggplot2) 
-
 plot.data <- read.csv('plot.data.csv')
-
 ggplot(plot.data, aes(x=avg.rating, y=reviews, alpha=0.5)) + geom_point() + ggtitle('Average Ratings of Movies (On a 1-5 Scale)') + xlab('Rating') + ylab('Number of Reviews') + theme(legend.position='none')
 ```
 
